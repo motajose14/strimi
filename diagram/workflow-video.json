@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Video Processing Flow",
+    "subtitle": "Upload → FFmpeg HLS → S3 → Publish",
+    "output": "workflow-video.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "admin", "label": "Admin (Livewire)" },
+    { "id": "app", "label": "Laravel App" },
+    { "id": "worker", "label": "Queue Worker" },
+    { "id": "storage", "label": "S3 + FFmpeg" }
+  ],
+  "mainPath": ["upload", "save_record", "dispatch_job", "download_s3", "convert_hls", "upload_segments", "update_record"],
+  "nodes": [
+    { "id": "upload", "lane": "admin", "col": 0, "type": "frontend", "label": "Upload", "sublabel": "Livewire form" },
+    { "id": "save_record", "lane": "app", "col": 1, "type": "backend", "label": "Save Record", "sublabel": "Video::create" },
+    { "id": "dispatch_job", "lane": "app", "col": 2, "type": "messagebus", "label": "Dispatch Job", "sublabel": "Jobs\\Video" },
+    { "id": "download_s3", "lane": "worker", "col": 3, "type": "backend", "label": "Download", "sublabel": "Storage::get" },
+    { "id": "convert_hls", "lane": "storage", "col": 4, "type": "backend", "label": "FFmpeg HLS", "sublabel": "X264+AAC 15s" },
+    { "id": "upload_segments", "lane": "storage", "col": 5, "type": "cloud", "label": "Upload HLS", "sublabel": ".m3u8 + .ts" },
+    { "id": "update_record", "lane": "app", "col": 5, "type": "database", "label": "Update URL", "sublabel": "video.m3u8" }
+  ],
+  "edges": [
+    { "from": "upload", "to": "save_record", "label": "save", "variant": "emphasis", "role": "main" },
+    { "from": "save_record", "to": "dispatch_job", "label": "enqueue", "role": "main" },
+    { "from": "dispatch_job", "to": "download_s3", "label": "pick up", "variant": "dashed", "role": "async" },
+    { "from": "download_s3", "to": "convert_hls", "label": "local file", "role": "main" },
+    { "from": "convert_hls", "to": "upload_segments", "label": "HLS output", "role": "main" },
+    { "from": "upload_segments", "to": "update_record", "label": "uploaded", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Upload → save → dispatch → download → HLS → upload → update URL"] },
+    { "dot": "amber", "title": "Async Details", "items": ["FFmpeg converts to HLS with 15s segments", "Only .m3u8 and .ts uploaded to S3", "Temp files cleaned in finally block"] }
+  ]
+}

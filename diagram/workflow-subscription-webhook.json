@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Subscription: Webhook Sync Flow",
+    "subtitle": "Payment gateway pushes status update",
+    "output": "workflow-subscription-webhook.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "gateway", "label": "Payment Gateway", "variant": "exception" },
+    { "id": "webhook", "label": "Webhook Handler" },
+    { "id": "db", "label": "MySQL" }
+  ],
+  "mainPath": ["wh_receive", "wh_parse", "wh_sync"],
+  "nodes": [
+    { "id": "wh_receive", "lane": "gateway", "col": 0, "type": "external", "label": "Push Event", "sublabel": "subscription.updated" },
+    { "id": "wh_parse", "lane": "webhook", "col": 1, "type": "backend", "label": "Parse Payload", "sublabel": "validate signature" },
+    { "id": "wh_sync", "lane": "db", "col": 2, "type": "database", "label": "Sync Status", "sublabel": "User + Transaccion" }
+  ],
+  "edges": [
+    { "from": "wh_receive", "to": "wh_parse", "label": "event", "variant": "emphasis", "role": "main" },
+    { "from": "wh_parse", "to": "wh_sync", "label": "valid", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Gateway push → parse → sync DB"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["Invalid signature → reject", "Missing user → log error"] }
+  ]
+}

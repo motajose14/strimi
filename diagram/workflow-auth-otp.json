@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Auth: OTP Flow",
+    "subtitle": "Send OTP → Email → Validate",
+    "output": "workflow-auth-otp.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (Mobile/App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "email", "label": "SMTP (Email)", "variant": "exception" }
+  ],
+  "mainPath": ["otp_send", "otp_gen", "otp_email", "otp_validate", "otp_check"],
+  "nodes": [
+    { "id": "otp_send", "lane": "user", "col": 0, "type": "external", "label": "Send OTP", "sublabel": "POST /send-otp" },
+    { "id": "otp_gen", "lane": "api", "col": 1, "type": "backend", "label": "Generate OTP", "sublabel": "OtpPass::create" },
+    { "id": "otp_email", "lane": "email", "col": 2, "type": "external", "label": "Send Email", "sublabel": "Otp Mail" },
+    { "id": "otp_validate", "lane": "user", "col": 3, "type": "external", "label": "Validate OTP", "sublabel": "POST /validate-otp" },
+    { "id": "otp_check", "lane": "api", "col": 4, "type": "backend", "label": "Verify OTP", "sublabel": "match + expiry" }
+  ],
+  "edges": [
+    { "from": "otp_send", "to": "otp_gen", "label": "request", "variant": "emphasis", "role": "main" },
+    { "from": "otp_gen", "to": "otp_email", "label": "dispatch", "variant": "dashed", "role": "async" },
+    { "from": "otp_email", "to": "otp_validate", "label": "received", "role": "main" },
+    { "from": "otp_validate", "to": "otp_check", "label": "code", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Request OTP → generate → email → validate → verified"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["OTP expiry → resend required", "Wrong code → retry"] }
+  ]
+}

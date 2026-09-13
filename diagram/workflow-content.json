@@ -1,0 +1,36 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Content Browsing Flow",
+    "subtitle": "Categories → Subcategories → Video Selection → HLS Playback",
+    "output": "workflow-content.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "db", "label": "MySQL" },
+    { "id": "video", "label": "Video Player" }
+  ],
+  "mainPath": ["browse_categories", "list_categories", "select_category", "list_subcats", "select_video", "play_video"],
+  "nodes": [
+    { "id": "browse_categories", "lane": "user", "col": 0, "type": "external", "label": "Browse", "sublabel": "GET /categorias" },
+    { "id": "list_categories", "lane": "api", "col": 1, "type": "backend", "label": "List Cats", "sublabel": "Categoria::list" },
+    { "id": "select_category", "lane": "user", "col": 2, "type": "external", "label": "Pick Category", "sublabel": "tap" },
+    { "id": "list_subcats", "lane": "api", "col": 3, "type": "backend", "label": "Subcats", "sublabel": "Subcategoria::lista" },
+    { "id": "select_video", "lane": "user", "col": 4, "type": "external", "label": "Pick Video", "sublabel": "GET /video/{uuid}" },
+    { "id": "play_video", "lane": "video", "col": 5, "type": "frontend", "label": "Play HLS", "sublabel": "m3u8 player" }
+  ],
+  "edges": [
+    { "from": "browse_categories", "to": "list_categories", "label": "load", "variant": "emphasis", "role": "main" },
+    { "from": "list_categories", "to": "select_category", "label": "show", "role": "main" },
+    { "from": "select_category", "to": "list_subcats", "label": "tap", "role": "main" },
+    { "from": "list_subcats", "to": "select_video", "label": "pick", "role": "main" },
+    { "from": "select_video", "to": "play_video", "label": "stream HLS", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Categories → subcategories → select → HLS playback"] },
+    { "dot": "violet", "title": "Content Sources", "items": ["Categories/Subcategories from MySQL", "Videos from S3 (HLS m3u8)"] }
+  ]
+}

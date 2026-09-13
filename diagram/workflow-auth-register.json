@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Auth: Register Flow",
+    "subtitle": "User registration → JWT token",
+    "output": "workflow-auth-register.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (Mobile/App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "auth", "label": "Auth Service (JWT)" }
+  ],
+  "mainPath": ["register", "reg_validate", "reg_create", "reg_token"],
+  "nodes": [
+    { "id": "register", "lane": "user", "col": 0, "type": "external", "label": "Register", "sublabel": "POST /auth/registro" },
+    { "id": "reg_validate", "lane": "api", "col": 1, "type": "backend", "label": "Validate Input", "sublabel": "RegistroRequest" },
+    { "id": "reg_create", "lane": "api", "col": 2, "type": "backend", "label": "Create User", "sublabel": "User::create" },
+    { "id": "reg_token", "lane": "auth", "col": 3, "type": "security", "label": "Issue JWT", "sublabel": "return token" }
+  ],
+  "edges": [
+    { "from": "register", "to": "reg_validate", "label": "submit", "variant": "emphasis", "role": "main" },
+    { "from": "reg_validate", "to": "reg_create", "label": "valid", "role": "main" },
+    { "from": "reg_create", "to": "reg_token", "label": "saved", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Register → validate → create → JWT"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["Validation fail → 422 error", "Duplicate email → conflict"] }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Newsletter Flow",
+    "subtitle": "Admin creates → Queue → SMTP → Users",
+    "output": "workflow-newsletter.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "admin", "label": "Admin (Livewire)" },
+    { "id": "app", "label": "Laravel App" },
+    { "id": "worker", "label": "Queue Worker" },
+    { "id": "smtp", "label": "SMTP Server" }
+  ],
+  "mainPath": ["create_newsletter", "save_newsletter", "dispatch_job", "query_users", "bcc_send"],
+  "nodes": [
+    { "id": "create_newsletter", "lane": "admin", "col": 0, "type": "frontend", "label": "Create", "sublabel": "Livewire form" },
+    { "id": "save_newsletter", "lane": "app", "col": 1, "type": "database", "label": "Save Record", "sublabel": "Newsletter::create" },
+    { "id": "dispatch_job", "lane": "app", "col": 2, "type": "messagebus", "label": "Dispatch Job", "sublabel": "Jobs\\Newsletter" },
+    { "id": "query_users", "lane": "worker", "col": 3, "type": "backend", "label": "Query Users", "sublabel": "tipo filter" },
+    { "id": "bcc_send", "lane": "smtp", "col": 4, "type": "external", "label": "BCC Send", "sublabel": "Mail::bcc()->send" }
+  ],
+  "edges": [
+    { "from": "create_newsletter", "to": "save_newsletter", "label": "save", "variant": "emphasis", "role": "main" },
+    { "from": "save_newsletter", "to": "dispatch_job", "label": "enqueue", "role": "main" },
+    { "from": "dispatch_job", "to": "query_users", "label": "pick up", "variant": "dashed", "role": "async" },
+    { "from": "query_users", "to": "bcc_send", "label": "emails", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Create → save → dispatch → query users → BCC send"] },
+    { "dot": "violet", "title": "Audience Filter", "items": ["tipo=all → every registered user", "tipo=suscritos → active subs only"] },
+    { "dot": "rose", "title": "Notes", "items": ["Async via Redis queue", "BCC protects recipient privacy", "No retry logic visible"] }
+  ]
+}

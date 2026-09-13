@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Auth: Login Flow",
+    "subtitle": "Credentials → JWT → Profile",
+    "output": "workflow-auth-login.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (Mobile/App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "auth", "label": "Auth Service (JWT)" }
+  ],
+  "mainPath": ["login", "login_check", "login_token", "me"],
+  "nodes": [
+    { "id": "login", "lane": "user", "col": 0, "type": "external", "label": "Login", "sublabel": "POST /auth/login" },
+    { "id": "login_check", "lane": "auth", "col": 1, "type": "security", "label": "Verify Creds", "sublabel": "guard('api')" },
+    { "id": "login_fail", "lane": "api", "col": 2, "type": "external", "label": "Reject", "sublabel": "401" },
+    { "id": "login_token", "lane": "auth", "col": 2, "type": "security", "label": "Issue JWT", "sublabel": "UserToken::create" },
+    { "id": "me", "lane": "api", "col": 3, "type": "backend", "label": "Profile /me", "sublabel": "GET /auth/me" }
+  ],
+  "edges": [
+    { "from": "login", "to": "login_check", "label": "credentials", "variant": "emphasis", "role": "main" },
+    { "from": "login_check", "to": "login_fail", "label": "invalid", "variant": "dashed", "role": "error" },
+    { "from": "login_check", "to": "login_token", "label": "valid", "role": "main" },
+    { "from": "login_token", "to": "me", "label": "JWT", "variant": "security", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Login → verify → JWT → /me"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["Invalid credentials → 401 reject"] }
+  ]
+}

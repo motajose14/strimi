@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Subscription: Subscribe Flow",
+    "subtitle": "Choose plan → Gateway charge → Activate",
+    "output": "workflow-subscribe.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "gateway", "label": "Payment Gateway", "variant": "exception" },
+    { "id": "db", "label": "MySQL" }
+  ],
+  "mainPath": ["choose_plan", "check_free", "sub_paid", "gateway_charge", "gateway_ok", "sub_activate", "sub_done"],
+  "nodes": [
+    { "id": "choose_plan", "lane": "user", "col": 0, "type": "external", "label": "Choose Plan", "sublabel": "GET /api/planes" },
+    { "id": "check_free", "lane": "api", "col": 1, "type": "backend", "label": "Is Free Plan?", "sublabel": "plan.is_free" },
+    { "id": "sub_free", "lane": "db", "col": 2, "type": "database", "label": "Activate Free", "sublabel": "status=1" },
+    { "id": "sub_paid", "lane": "api", "col": 2, "type": "backend", "label": "New Customer", "sublabel": "Gateway::obtenerCliente" },
+    { "id": "gateway_charge", "lane": "gateway", "col": 3, "type": "external", "label": "Charge", "sublabel": "Stripe or MP" },
+    { "id": "gateway_ok", "lane": "gateway", "col": 4, "type": "external", "label": "Payment OK", "sublabel": "active / authorized" },
+    { "id": "sub_activate", "lane": "db", "col": 5, "type": "database", "label": "Activate Sub", "sublabel": "User + Transaccion" },
+    { "id": "sub_done", "lane": "user", "col": 5, "type": "external", "label": "Success", "sublabel": "subscribed" }
+  ],
+  "edges": [
+    { "from": "choose_plan", "to": "check_free", "label": "select", "variant": "emphasis", "role": "main" },
+    { "from": "check_free", "to": "sub_free", "label": "free", "role": "main" },
+    { "from": "check_free", "to": "sub_paid", "label": "paid", "variant": "emphasis", "role": "main" },
+    { "from": "sub_paid", "to": "gateway_charge", "label": "charge", "variant": "security", "role": "main" },
+    { "from": "gateway_charge", "to": "gateway_ok", "label": "success", "role": "main" },
+    { "from": "gateway_ok", "to": "sub_activate", "label": "confirmed", "role": "main" },
+    { "from": "sub_activate", "to": "sub_done", "label": "saved", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Free plan → instant activation", "Paid → charge → activate → done"] },
+    { "dot": "amber", "title": "Payment Edge Cases", "items": ["MP pending → redirect to init_point", "Gateway error → rollback"] }
+  ]
+}

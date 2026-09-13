@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Auth: Password Recovery Flow",
+    "subtitle": "Request reset → Email → New password",
+    "output": "workflow-auth-recover.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (Mobile/App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "email", "label": "SMTP (Email)", "variant": "exception" }
+  ],
+  "mainPath": ["recover", "recover_gen", "recover_send"],
+  "nodes": [
+    { "id": "recover", "lane": "user", "col": 0, "type": "external", "label": "Recover", "sublabel": "POST /recuperar" },
+    { "id": "recover_gen", "lane": "api", "col": 1, "type": "backend", "label": "Generate Token", "sublabel": "Password::create" },
+    { "id": "recover_send", "lane": "email", "col": 2, "type": "external", "label": "Reset Link", "sublabel": "Email dispatch" }
+  ],
+  "edges": [
+    { "from": "recover", "to": "recover_gen", "label": "request", "variant": "emphasis", "role": "main" },
+    { "from": "recover_gen", "to": "recover_send", "label": "dispatch", "variant": "dashed", "role": "async" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Request → generate token → email reset link"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["Email not found → still returns 200 (security)", "Token expiry → resend required"] }
+  ]
+}

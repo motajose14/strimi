@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Strimi — System Architecture",
+    "subtitle": "Laravel 10 video streaming platform with dual payment gateways",
+    "output": "strimi-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "request-path", "label": "Request path", "focus": ["mobile", "unit", "laravel", "mysql", "redis"], "note": "User request: Mobile → NGINX Unit → Laravel → MySQL + Redis cache." },
+      { "id": "video-pipeline", "label": "Video pipeline", "focus": ["admin", "laravel", "queue", "ffmpeg", "s3"], "note": "Admin upload → queue job → FFmpeg HLS transcode → S3 storage." },
+      { "id": "payments", "label": "Payments", "focus": ["laravel", "gateway"], "note": "Stripe/MercadoPago charge via dual gateway." }
+    ]
+  },
+  "components": [
+    { "id": "mobile", "type": "external", "label": "Mobile App", "sublabel": "Flutter / React Native", "pos": [40, 195], "size": [130, 60], "tag": "JWT auth" },
+    { "id": "admin", "type": "external", "label": "Admin Panel", "sublabel": "Livewire + Blade", "pos": [40, 430], "size": [130, 60], "tag": "web" },
+    { "id": "unit", "type": "cloud", "label": "NGINX Unit", "sublabel": "App Server :8080", "pos": [280, 195], "size": [130, 60], "tag": "reverse proxy" },
+    { "id": "laravel", "type": "backend", "label": "Laravel 10", "sublabel": "API + Web", "pos": [530, 195], "size": [130, 60], "tag": "PHP 8.3" },
+    { "id": "auth", "type": "security", "label": "Auth Service", "sublabel": "JWT + Sanctum", "pos": [530, 50], "size": [130, 64], "tag": "token verify" },
+    { "id": "redis", "type": "database", "label": "Redis", "sublabel": "Cache + Sessions", "pos": [780, 50], "size": [130, 60], "tag": "fast lookup" },
+    { "id": "mysql", "type": "database", "label": "MySQL", "sublabel": "Primary store", "pos": [780, 320], "size": [130, 60], "tag": "InnoDB" },
+    { "id": "s3", "type": "cloud", "label": "S3 Storage", "sublabel": "Videos + Thumbnails", "pos": [1200, 320], "size": [130, 60], "tag": "HLS segments" },
+    { "id": "gateway", "type": "external", "label": "Payment Gateway", "sublabel": "Stripe / MercadoPago", "pos": [530, 430], "size": [130, 60], "tag": "dual switchable" },
+    { "id": "queue", "type": "messagebus", "label": "Queue Worker", "sublabel": "async jobs", "pos": [1000, 430], "size": [130, 60], "tag": "Redis driver" },
+    { "id": "ffmpeg", "type": "backend", "label": "FFmpeg", "sublabel": "HLS transcode", "pos": [1200, 430], "size": [130, 60], "tag": "X264+AAC" },
+    { "id": "smtp", "type": "external", "label": "SMTP", "sublabel": "Email delivery", "pos": [1200, 50], "size": [130, 60], "tag": "newsletters + OTP" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Application Server", "wraps": ["unit", "laravel", "auth"], "pad": 14 },
+    { "kind": "region", "label": "Data Layer", "wraps": ["mysql", "redis", "queue"], "pad": 14 },
+    { "kind": "security-group", "label": "Trust boundary", "wraps": ["mobile", "unit", "admin", "gateway"], "pad": 18 }
+  ],
+  "connections": [
+    { "id": "c-mobile-unit", "from": "mobile", "to": "unit", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "c-unit-laravel", "from": "unit", "to": "laravel", "label": "FastCGI", "variant": "emphasis" },
+    { "id": "c-laravel-mysql", "from": "laravel", "to": "mysql", "label": "SQL", "variant": "emphasis", "fromSide": "bottom", "toSide": "left", "labelDy": 24 },
+    { "id": "c-laravel-redis", "from": "laravel", "to": "redis", "label": "cache", "variant": "dashed", "fromSide": "top", "toSide": "left", "via": [[595, 140], [770, 140], [770, 80]] },
+    { "id": "c-auth-laravel", "from": "auth", "to": "laravel", "label": "verify JWT", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": -80 },
+    { "id": "c-redis-queue", "from": "redis", "to": "queue", "label": "dispatch", "variant": "dashed", "fromSide": "right", "toSide": "left", "via": [[960, 80], [960, 460]] },
+    { "id": "c-queue-ffmpeg", "from": "queue", "to": "ffmpeg", "label": "procesar:video", "variant": "dashed", "labelAt": [1165, 504] },
+    { "id": "c-ffmpeg-s3", "from": "ffmpeg", "to": "s3", "label": "upload HLS", "variant": "dashed" },
+    { "id": "c-admin-laravel", "from": "admin", "to": "laravel", "label": "Livewire", "variant": "default", "fromSide": "right", "toSide": "left", "via": [[470, 460], [470, 225]] },
+    { "id": "c-laravel-gateway", "from": "laravel", "to": "gateway", "label": "SDK charge", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [640, 310] }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Request Path", "items": ["Mobile → NGINX Unit → Laravel → MySQL", "JWT verified via Auth Service", "Redis for cache, sessions, and queue broker"] },
+    { "dot": "amber", "title": "Video Pipeline", "items": ["Admin uploads via Livewire", "Queue Worker picks up Jobs\\Video", "FFmpeg transcodes to HLS (X264+AAC, 15s segments)", "Only .m3u8 + .ts uploaded to S3"] },
+    { "dot": "cyan", "title": "Payment Gateways", "items": ["Dual gateway: Stripe + MercadoPago", "Switchable via PAYMENT_GATEWAY env", "Webhooks sync subscription status", "Gateway.php abstracts all interfaces"] },
+    { "dot": "violet", "title": "Async Jobs", "items": ["Video: HLS transcode pipeline", "Newsletter: BCC email dispatch", "CleanVideoS3: S3 file cleanup", "Queue driver: Redis (configurable)"] }
+  ]
+}

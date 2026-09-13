@@ -1,0 +1,32 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Strimi — Subscription: Cancel Flow",
+    "subtitle": "Cancel at gateway → Update status",
+    "output": "workflow-subscription-cancel.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "user", "label": "User (App)" },
+    { "id": "api", "label": "API v1 (Laravel)" },
+    { "id": "gateway", "label": "Payment Gateway", "variant": "exception" },
+    { "id": "db", "label": "MySQL" }
+  ],
+  "mainPath": ["cancel", "cancel_check", "cancel_gw", "cancel_db"],
+  "nodes": [
+    { "id": "cancel", "lane": "user", "col": 0, "type": "external", "label": "Cancel Sub", "sublabel": "POST /cancelar" },
+    { "id": "cancel_check", "lane": "api", "col": 1, "type": "backend", "label": "Check Status", "sublabel": "valid subscription?" },
+    { "id": "cancel_gw", "lane": "gateway", "col": 2, "type": "external", "label": "Cancel at GW", "sublabel": "cancelarSuscripcion" },
+    { "id": "cancel_db", "lane": "db", "col": 3, "type": "database", "label": "Mark Cancelled", "sublabel": "status=2" }
+  ],
+  "edges": [
+    { "from": "cancel", "to": "cancel_check", "label": "request", "variant": "emphasis", "role": "main" },
+    { "from": "cancel_check", "to": "cancel_gw", "label": "valid", "role": "main" },
+    { "from": "cancel_gw", "to": "cancel_db", "label": "cancelled", "role": "main" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Happy Path", "items": ["Cancel → check → gateway cancel → mark cancelled"] },
+    { "dot": "rose", "title": "Exception Paths", "items": ["Invalid subscription → 422 reject"] }
+  ]
+}
